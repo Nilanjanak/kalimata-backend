@@ -63,6 +63,44 @@ export const registerUser = async (req, res) => {
 // ============================
 // Login user
 // ============================
+// export const loginUser = async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+
+//     const user = await User.findOne({ email });
+//     if (!user) return res.status(400).json({ error: "Invalid credentials" });
+
+//     const isMatch = await user.comparePassword(password);
+//     if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
+//     console.log(email,password)
+//     const token = user.generateAccessToken();
+
+//     user.lastLoginAt = new Date();
+//     await user.save();
+
+//     res.cookie("AccessToken", token, {
+//       httpOnly: true,
+//       secure: false, // set true in production
+//       sameSite: "Lax",
+//       maxAge: 24 * 60 * 60 * 1000,
+//     });
+
+//     res.json({
+//       message: "Login successful",
+//       user: {
+//         id: user._id,
+//         email: user.email,
+//       },
+//       token, // Optional: if you want token in response
+//     });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
+
+
+// src/Route/User.js (loginUser)
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -72,16 +110,20 @@ export const loginUser = async (req, res) => {
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
-    console.log(email,password)
+
     const token = user.generateAccessToken();
 
     user.lastLoginAt = new Date();
     await user.save();
 
+    // Set cookie attributes appropriate for cross-site XHR
+    const isProd = process.env.NODE_ENV === "production";
+
     res.cookie("AccessToken", token, {
       httpOnly: true,
-      secure: false, // set true in production
-      sameSite: "Lax",
+      secure: isProd,            // secure=true in production (HTTPS)
+      sameSite: isProd ? "none" : "lax", // none in prod for cross-site requests
+      path: "/",
       maxAge: 24 * 60 * 60 * 1000,
     });
 
@@ -91,9 +133,10 @@ export const loginUser = async (req, res) => {
         id: user._id,
         email: user.email,
       },
-      token, // Optional: if you want token in response
+      token, // optional: still returning token in body
     });
   } catch (err) {
+    console.error("loginUser error:", err);
     res.status(500).json({ error: err.message });
   }
 };

@@ -125,6 +125,23 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+
+// Temporary debug middleware — add after cookieParser()
+app.use((req, res, next) => {
+  try {
+    console.log("→ Incoming Request:", req.method, req.originalUrl);
+    console.log("   Origin:", req.headers.origin || "(no origin)");
+    console.log("   Cookies:", req.cookies || {});
+    // Log auth header if present
+    if (req.headers.authorization) {
+      console.log("   Authorization:", req.headers.authorization.slice(0, 60) + "...");
+    }
+  } catch (e) {
+    console.warn("Cookie debug middleware error:", e);
+  }
+  next();
+});
+
 /* -------------------------------------------------------
    ROUTES
 ------------------------------------------------------- */
